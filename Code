@@ -1,0 +1,175 @@
+import json, os, time
+
+# my little shop thing, been using this forever
+file = "stuff.json"
+
+def get_data():
+    if os.path.exists(file):
+        with open(file) as f:
+            return json.load(f)
+    return {"items":{}}
+
+def save_it(d):
+    with open(file,"w") as f:
+        json.dump(d,f,indent=2)
+
+def clr():
+    os.system("cls" if os.name=="nt" else "clear")
+
+# -------------------------------------------------
+def add_new():
+    clr()
+    print("add something new")
+    name = input("\n  what is it called? ").strip().lower()
+    if not name:
+        print("  nah, gotta have a name")
+        time.sleep(1.2); return
+    d = get_data()
+    if name in d["items"]:
+        print("  already got that one")
+        time.sleep(1.2); return
+
+    while True:
+        q = input("  how many? ")
+        if q.isdigit(): break
+        print("  just numbers please")
+    q = int(q)
+
+    while True:
+        p = input("  price each? ")
+        try:
+            p = float(p); break
+        except:
+            print("  come on, proper price")
+    
+    d["items"][name] = {"qty":q, "price":p}
+    save_it(d)
+    print(f"  cool, added {q} of {name}")
+    time.sleep(1.3)
+
+# -------------------------------------------------
+def edit():
+    clr()
+    d = get_data()
+    if not d["items"]:
+        print("  nothing here yet"); time.sleep(1.3); return
+    what = input("  which one to change? ").lower()
+    if what not in d["items"]:
+        print("  can't find it"); time.sleep(1.3); return
+    
+    print(f"  right now → {d['items'][what]['qty']} pcs, ₹{d['items'][what]['price']}")
+    ask = input("  qty, price or both? (q/p/b) → ").lower()
+    
+    if ask in "qb":
+        while True:
+            n = input(f"  new qty ({d['items'][what]['qty']} now) → ")
+            if n.isdigit():
+                d["items"][what]["qty"] = int(n); break
+    
+    if ask in "pb":
+        while True:
+            n = input(f"  new price ({d['items'][what]['price']} now) → ")
+            try:
+                d["items"][what]["price"] = float(n); break
+            except: pass
+    
+    save_it(d)
+    print("  done")
+    time.sleep(1)
+
+# -------------------------------------------------
+def remove():
+    clr()
+    d = get_data()
+    name = input("  what to get rid of? ").lower()
+    if name not in d["items"]:
+        print("  not here"); time.sleep(1.3); return
+    print(f"  found {name} — {d['items'][name]['qty']} left")
+    if input("  really delete? y/n → ") == "y":
+        del d["items"][name]
+        save_it(d)
+        print("  gone")
+    else:
+        print("  ok kept it")
+    time.sleep(1.3)
+
+# -------------------------------------------------
+def find():
+    clr()
+    d = get_data()
+    s = input("  looking for? ").lower()
+    found = 0
+    for n,info in d["items"].items():
+        if s in n:
+            print(f"  {n} → {info['qty']} pcs @ ₹{info['price']}")
+            found += 1
+    if not found:
+        print("  nothing like that")
+    input("\n  (enter)")
+
+# -------------------------------------------------
+def sell():
+    clr()
+    d = get_data()
+    total = 0
+    cart = []
+    
+    print("start ringing stuff up, type 'done' when finished")
+    print("-"*44)
+    
+    while 1:
+        item = input("\n  item → ").lower().strip()
+        if item=="done": break
+        if item not in d["items"] or d["items"][item]["qty"]==0:
+            print("  nah, don't have it")
+            continue
+        
+        qty = d["items"][item]["qty"]
+        price = d["items"][item]["price"]
+        print(f"  got {qty} at ₹{price} each")
+        
+        while 1:
+            ask = input("  how many → ")
+            if ask.isdigit() and 0<int(ask)<=qty:
+                ask = int(ask); break
+            print(f"  only {qty} left man")
+        
+        cost = ask * price
+        total += cost
+        cart.append((item.title(), ask, price, cost))
+        d["items"][item]["qty"] -= ask
+    
+    if total:
+        gst = round(total*0.18,2)
+        final = total + gst
+        save_it(d)
+        print("\n"+"="*44)
+        for a,b,c,e in cart:
+            print(f"  {a:<20} {b:>3} × ₹{c:>6} = ₹{e:>8}")
+        print("-"*44)
+        print(f"  subtotal{" "*24}₹{total:>8}")
+        print(f"  gst 18%{" "*25}₹{gst:>8}")
+        print("="*44)
+        print(f"  TOTAL{" "*29}₹{final:>8}")
+        print("  thanks come again")
+    else:
+        print("\n  nothing sold")
+    
+    input("\n  (enter)")
+
+# -------------------------------------------------
+while 1:
+    clr()
+    print("my shop thing")
+    print("1 add   2 edit   3 remove")
+    print("4 find   5 sell   6 quit")
+    c = input("\n → ").strip()
+    if c=="1": add_new()
+    elif c=="2": edit()
+    elif c=="3": remove()
+    elif c=="4": find()
+    elif c=="5": sell()
+    elif c=="6":
+        print("  later"); time.sleep(1); break
+    else:
+        print("  ??"); time.sleep(0.8)
